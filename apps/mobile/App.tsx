@@ -31,6 +31,7 @@ type Route =
   | { name: "forgotPassword" }
   | { name: "resetPassword"; token?: string }
   | { name: "verificationPending"; email?: string }
+  | { name: "onboarding"; email: string }
   | { name: "home" };
 
 type AuthState =
@@ -138,19 +139,29 @@ export default function App() {
   const session = authState.status === "signedOut" ? null : authState.session;
   const headerEmail = session?.account.email;
 
+  // #385: determine whether to route to onboarding (new account) or home
+  function routeAfterLogin(sessionData: LoginResponse, tokens: SessionTokens, isNew: boolean) {
+    memoryTokenStore.set(tokens);
+    if (!sessionData.account.verified) {
+      setAuthState({ status: "unverified", session: sessionData });
+      setRoute({ name: "verificationPending", email: sessionData.account.email });
+      return;
+    }
+    setAuthState({ status: "signedIn", session: sessionData });
+    if (isNew) {
+      setRoute({ name: "onboarding", email: sessionData.account.email });
+    } else {
+      setRoute({ name: "home" });
+    }
+  }
+
   if (route.name === "login") {
     return (
       <LoginScreen
-        onLoginSuccess={(sessionData, tokens) => {
-          memoryTokenStore.set(tokens);
-          if (sessionData.account.verified) {
-            setAuthState({ status: "signedIn", session: sessionData });
-            setRoute({ name: "home" });
-          } else {
-            setAuthState({ status: "unverified", session: sessionData });
-            setRoute({ name: "verificationPending", email: sessionData.account.email });
-          }
-        }}
+        onLoginSuccess={(sessionData, tokens) =>
+          // Existing logins are returning users; register flow would pass isNew=true
+          routeAfterLogin(sessionData, tokens, false)
+        }
         onForgotPassword={() => setRoute({ name: "forgotPassword" })}
       />
     );
@@ -184,6 +195,16 @@ export default function App() {
           setAuthState({ status: "signedOut" });
           setRoute({ name: "login" });
         }}
+      />
+    );
+  }
+
+  // #385: new verified accounts land on onboarding before the main shell
+  if (route.name === "onboarding") {
+    return (
+      <OnboardingScreen
+        email={route.email}
+        onContinue={() => setRoute({ name: "home" })}
       />
     );
   }
@@ -465,6 +486,27 @@ function HomeScreen(props: { email: string; verified: boolean; onLogout: () => v
         <Text style={styles.noticeSuccessText}>{props.email}</Text>
       </View>
       <PrimaryButton label="Sign out" onPress={props.onLogout} />
+    </ScreenShell>
+  );
+}
+
+// #385 – first landing screen for newly created accounts.
+// This is a stub; onboarding steps (profile setup, tour, etc.) are added here.
+function OnboardingScreen(props: { email: string; onContinue: () => void }) {
+  return (
+    <ScreenShell
+      title="Welcome to Sidewalk"
+      subtitle="You’re all set. Let’s get you oriented before you dive in."
+    >
+      <View style={styles.noticeInfo}>
+        <Text style={styles.noticeInfoText}>
+          Signed in as {props.email}
+        </Text>
+      </View>
+      <Text style={styles.body}>
+        Onboarding steps will appear here. For now, continue to the app.
+      </Text>
+      <PrimaryButton label="Continue" onPress={props.onContinue} />
     </ScreenShell>
   );
 }
