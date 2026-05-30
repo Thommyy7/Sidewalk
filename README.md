@@ -71,6 +71,15 @@ The initial scaffold intentionally keeps secrets and third-party dependencies mi
 
 This repo is being prepared for public contributors. Keep changes scoped, document new environment variables, and prefer shared contracts in `packages/types` when multiple apps need the same shape.
 
+### Web auth challenge extension point
+
+The web auth client includes a shared anti-bot hook in `apps/web/lib/authClient.ts`:
+
+- `setAuthChallengeHandler(handler)` registers a future challenge provider
+- `register(...)` and `login(...)` both request an optional `challengeToken` via that handler
+
+By default no challenge is required, so current flows stay simple. When a CAPTCHA or other challenge is introduced, wire it once with `setAuthChallengeHandler` and both signup/login calls will reuse it.
+
 ## License
 
 MIT
