@@ -73,6 +73,7 @@ This repo is being prepared for public contributors. Keep changes scoped, docume
 
 For auth UI conventions in the web workspace, see `apps/web/AUTH_CONTRIBUTING.md`.
 For auth backend routes, payloads, and test harness notes, see `apps/api/AUTH_API.md`.
+For auth policy and feature-flag decisions, see `apps/api/AUTH_DECISIONS.md`.
 
 ## License
 

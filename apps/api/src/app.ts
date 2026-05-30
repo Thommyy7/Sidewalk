@@ -39,6 +39,7 @@ const env = readServiceEnv(
     PORT: z.coerce.number().default(4000),
     APP_ENV: z.enum(["development", "test", "production"]).default("development"),
     ENABLE_DEV_AUTH_SHORTCUTS: z.enum(["true", "false"]).default("false"),
+    ENABLE_AUTH_SESSION_LIST: z.enum(["true", "false"]).default("false"),
     JWT_SECRET: z.string().min(8).default("replace-me"),
     ALLOWED_ORIGIN: z.string().url().default("http://localhost:3000")
   })
@@ -240,6 +241,10 @@ app.post("/auth/refresh", (req, res) => {
 
   const existing = sessionStore.getByRefreshToken(parsed.data.refreshToken);
   if (!existing) {
+    const suspectedReuse = sessionStore.wasRefreshTokenSeen(parsed.data.refreshToken);
+    if (suspectedReuse) {
+      authAuditLog(req, "login", "failure", { code: "REFRESH_REUSE_DETECTED" });
+    }
     const err: AuthErrorResponse = { code: "INVALID_TOKEN", message: "Refresh token is invalid or already used." };
     res.status(401).json(err);
     return;
@@ -398,6 +403,26 @@ app.get("/auth/metrics", (_req, res) => {
   res.json(getMetrics());
 });
 
+app.get("/auth/sessions", (req, res) => {
+  if (env.ENABLE_AUTH_SESSION_LIST !== "true") {
+    const err: AuthErrorResponse = { code: "NOT_FOUND", message: "Route not found." };
+    res.status(404).json(err);
+    return;
+  }
+  const token = bearerToken(req.headers.authorization);
+  if (!token) {
+    const err: AuthErrorResponse = { code: "INVALID_TOKEN", message: "Missing or malformed Authorization header." };
+    res.status(401).json(err);
+    return;
+  }
+  const session = sessionStore.getBySessionId(token);
+  if (!session) {
+    const err: AuthErrorResponse = { code: "SESSION_NOT_FOUND", message: "Session not found or already revoked." };
+    res.status(404).json(err);
+    return;
+  }
+  res.status(200).json([{ sessionId: session.sessionId, createdAt: session.createdAt.toISOString() }]);
+});
+
 export { env };
 export { resetMetrics } from "./services/authMetrics.js";
-    authAuditLog(req, "login", "failure", { code: "INVALID_CREDENTIALS", email });
