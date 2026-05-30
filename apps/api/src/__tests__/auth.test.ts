@@ -372,6 +372,17 @@ describe("POST /auth/password-reset/complete", () => {
   });
 });
 
+describe("POST /auth/dev/seed-user", () => {
+  it("is blocked outside development shortcut mode", async () => {
+    const res = await request(app)
+      .post("/auth/dev/seed-user")
+      .send({ email: "devseed@example.com", password: "password123" });
+
+    expect(res.status).toBe(404);
+    expect(res.body.code).toBe("NOT_FOUND");
+  });
+});
+
 // ── rate limiting ─────────────────────────────────────────────────────────────
 
 import { makeRateLimiter } from "../middleware/authRateLimit.js";
