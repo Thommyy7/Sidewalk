@@ -1,3 +1,17 @@
+// ── Role model ────────────────────────────────────────────────────────────────
+
+/**
+ * First-pass role model for the auth milestone.
+ *
+ * MVP starts with a single `citizen` role. `agency` and `admin` are reserved
+ * for later milestones (Identity, Reporting) and must not be assigned during
+ * the auth phase. Expand this union when the next milestone introduces
+ * permission-gated routes.
+ *
+ * See: apps/api/AUTH_DECISIONS.md for the full role model rationale.
+ */
+export type AccountRole = "citizen" | "agency" | "admin";
+
 // ── Registration ──────────────────────────────────────────────────────────────
 
 export type RegisterRequest = {
@@ -34,6 +48,7 @@ export type LoginResponse = SessionTokens & {
     id: string;
     email: string;
     verified: boolean;
+    role: AccountRole;
   };
 };
 
@@ -105,11 +120,16 @@ export type AuthErrorResponse = {
 /**
  * The public account shape shared across web, mobile, and API.
  * Contains only client-safe fields — no password hashes or internal flags.
+ *
+ * `role` defaults to `citizen` for all accounts created during the auth
+ * milestone. Agency and admin roles are reserved for later milestones.
  */
 export type AuthUser = {
   id: string;
   email: string;
   verified: boolean;
+  /** Account role. Always `citizen` during the auth milestone. */
+  role: AccountRole;
 };
 
 /**

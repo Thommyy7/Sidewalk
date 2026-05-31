@@ -1,8 +1,8 @@
-import { Router } from "express";
+import { Router, type Router as ExpressRouter } from "express";
 import type { AuthedRequest } from "../middleware/requireAuth.js";
 import { stellarAuditLog } from "../services/stellarAuditLog.js";
 
-export function makeWalletRouter(requireAuth: ReturnType<typeof import("../middleware/requireAuth.js").makeRequireAuth>) {
+export function makeWalletRouter(requireAuth: ReturnType<typeof import("../middleware/requireAuth.js").makeRequireAuth>): ExpressRouter {
   const router = Router();
 
   /**
