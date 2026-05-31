@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { Router, type Router as ExpressRouter } from "express";
 import type { AuthedRequest } from "../middleware/requireAuth.js";
 import { stellarAuditLog } from "../services/stellarAuditLog.js";
 

@@ -13,3 +13,5 @@ process.on("unhandledRejection", (reason) => {
     reason: reason instanceof Error ? reason.message : String(reason),
   }));
 });
+
+startServer();
